@@ -1,57 +1,117 @@
 import requests
+import parser
 from bs4 import BeautifulSoup
+import json
+import argparse
+import os
 
-def get_confluence_page_html(space_key, page_title, username, api_token):
-    # Replace 'YOUR_CONFLUENCE_INSTANCE_URL', 'YOUR_SPACE_KEY', 'YOUR_PAGE_TITLE', 'YOUR_USERNAME', and 'YOUR_API_TOKEN'
-    # confluence_url = "https://your-confluence-instance-url"
-    confluence_url = "https://vishalinagathevan.atlassian.net/wiki/home"
-    api_url = f"{confluence_url}/rest/api/content"
-    # https://vishalinagathevan.atlassian.net/wiki/rest/api/content/131199?expand=body.storage
-    params = {
-        'spaceKey': space_key,
-        'title': page_title,
-        'expand': 'body.view'
-    }
-    auth = (username, api_token)
+# Confluence Username and Apitoken
+username = os.environ["CONFLUENCE_USERNAME"]
+confluence_apitoken = os.environ["CONFLUENCE_APITOKEN"]
 
-    response = requests.get(api_url, params=params, auth=auth)
-    print(f"response {response.text}")
+def get_confluence_page_html(username, confluence_apitoken):
+    """Get the confluence page to read the table data.
+
+    Args:
+        username (str) : email id
+        confluence_apitoken (str) : confluence api token
+        
+    Returns:
+        page_body : confluence page body where table resides
+    """
+    params = {"expand": "body.view"}
+    auth = (username, confluence_apitoken)
+
+    response = requests.get(confluence_rest_api, params=params, auth=auth)
     if response.status_code == 200:
         data = response.json()
-        page_body = data.get('body', {}).get('view', {}).get('value', '')
+        storage_content = data.get("body", {}).get("storage", {}).get("value", "")
+        page_body = decode_confluence_storage(storage_content)
         return page_body
     else:
-        print(f"Failed to retrieve Confluence page. Status code: {response.status_code}")
+        print(
+            f"Failed to retrieve Confluence page. Status code: {response.status_code}"
+        )
         return None
 
+def decode_confluence_storage(storage_content):
+    """Get the decode confluence storage data.
+
+    Args:
+        storage_content (str) :html parser
+          
+    Returns:
+        soup : decode html parser confluence storage.
+    """
+    soup = BeautifulSoup(storage_content, "html.parser")
+    return str(soup)
+
 def extract_table_data(html_content):
-    # Beautiful Soup is a Python library for pulling data out of HTML and XML files. 
-    soup = BeautifulSoup(html_content, 'html.parser')
-    table = soup.find('table')
+    """Get the table data.
+
+    Args:
+        html_content (str) : content of html
+          
+    Returns:
+        table_data : Extract table data as a list.
+    """
     
+    soup = BeautifulSoup(html_content, "html.parser")
+    table = soup.find("table")
+
     if table:
         # Extract table data as a list of lists
         table_data = []
-        for row in table.find_all('tr'):
-            row_data = [cell.get_text(strip=True) for cell in row.find_all(['td', 'th'])]
+        for row in table.find_all("tr"):
+            row_data = [
+                cell.get_text(strip=True) for cell in row.find_all(["td", "th"])
+            ]
             table_data.append(row_data)
         return table_data
     else:
         print("No table found on the Confluence page.")
         return None
 
-# Replace 'YOUR_SPACE_KEY', 'YOUR_PAGE_TITLE', 'YOUR_USERNAME', and 'YOUR_API_TOKEN'
-space_key = "My first space"
-page_title = "Application Table"
-username = "VISHALI"
-api_token = "ATATT3xFfGF0G41sSHD_tTUjTJJ1IsmIwgUaw0ZH-ZK1lVSu13gUY3Wz_Ojw60WAeoMsTYCOId-ZPqAOKmrIy_S02zZLy0EcSVZGauTP5BnfXvCP4ztsCosocb6l0AMamjls7Kruq39R_uC4ZkKKspvFANHOf-mn6jtnJsRuZPLCMq6c_eRMqa4=B3965E25"
+def find_service_name(data, name):
+    """Get the service name from confluence page table
 
-html_content = get_confluence_page_html(space_key, page_title, username, api_token)
-print(f"html_content {html_content}")
-# if html_content:
-#     table_data = extract_table_data(html_content)
+    Args:
+        data (str) : table data from confluence
+        name (str) : application name
+        
+    Returns:
+        service_name_dict : Application name and service name as key and value
+    """
     
-#     if table_data:
-#         print("Table Data:")
-#         for row in table_data:
-#             print(row)
+    service_name_dict = {}
+    for row in data:
+        if row[3] == name:
+            key = row[3]
+            value = row[4]
+            service_name_dict[key] = value
+            return service_name_dict
+    return None
+
+#Get confluence url and application name
+argparser = argparse.ArgumentParser(prog='confluence_page',
+                                    description='To read table content from confluence page and providing output to jenkins pipeline')
+argparser.add_argument('-confluence_api_base', '--confluence_url', type=str, metavar='', required=True, help='url to access confluence page')
+argparser.add_argument('-app_name','--confluence_app_name', type=str, metavar='', required=True, help='Application name')
+
+args = argparser.parse_args()
+confluence_rest_api = args.confluence_url
+application_name = args.confluence_app_name
+
+#  To get confluence page data
+html_content = get_confluence_page_html(username, confluence_apitoken)
+
+if html_content:
+    table_data = extract_table_data(html_content)
+
+    if table_data:
+        service_names = find_service_name(table_data, application_name)
+        if service_names:
+            service_names_json = json.dumps(service_names)
+            print(service_names_json)
+        else:
+            print(f"service names not found ")
