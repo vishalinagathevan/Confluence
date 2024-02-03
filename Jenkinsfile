@@ -5,6 +5,7 @@ node {
         checkout scm
         withCredentials([usernamePassword(credentialsId: 'CONFLUENCE', usernameVariable: 'CONFLUENCE_USER', passwordVariable: 'CONFLUENCE_TOKEN')]) {
             String serviceInfoCommand = """
+            bat
                 python -m pip install -r requirements.txt --user
                 python service-getter.py -u ${confUrl} -a ${appName}
             """
