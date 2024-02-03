@@ -84,10 +84,10 @@ def find_service_name(data, name):
     """
     
     service_name_dict = {}
-    for row in data:
-        if row[3] == name:
-            key = row[3]
-            value = row[4]
+    for row in data[1:]:
+        if row[2] == name:
+            key = row[2]
+            value = row[3]
             service_name_dict[key] = value
             return service_name_dict
     return None
