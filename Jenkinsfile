@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        confUrl = 'https://vishalinagathevan.atlassian.net/wiki/rest/api/content/131199?expand=body.storage'
-        appName = 'Test1 RMI Replatform'
+        CONFLUENCE_USERNAME = credentials('CONFLUENCE_USERNAME')
+        CONFLUENCE_APITOKEN = credentials('CONFLUENCE_APITOKEN')
     }
 
     stages {
@@ -16,8 +16,20 @@ pipeline {
                     // Install required Python packages
                     sh 'python -m pip install -r requirements.txt --user'
 
-                    // Run Python script
-                    sh "python service-getter.py -u ${confUrl} -a ${appName}"
+                    // Define the path to your Python executable
+                    def pythonPath = 'C:\\Users\\visha\\AppData\\Local\\Programs\\Python\\Python38\\python.exe'
+
+                    // Define the path to your Python script
+                    def pythonScriptPath = 'C:\\Users\\visha\\OneDrive\\Desktop\\Atlassian\\Confluence\\service-getter.py'
+
+                    // Run the Python script with the required arguments
+                    def pythonCommand = "${pythonPath} ${pythonScriptPath} -u ${env.CONFLUENCE_USERNAME} -t ${env.CONFLUENCE_APITOKEN} -a ${env.confUrl}"
+                    def process = bat(returnStatus: true, script: pythonCommand)
+
+                    // Check the exit status of the Python script
+                    if (process != 0) {
+                        error "Failed to run the Python script. Exit code: ${process}"
+                    }
                 }
             }
         }
