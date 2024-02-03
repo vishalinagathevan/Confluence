@@ -1,3 +1,5 @@
+import jenkins.model.*
+jenkins = Jenkins.instance
 node {
     String confUrl = 'https://vishalinagathevan.atlassian.net/wiki/rest/api/content/131199?expand=body.storage'
     String appName = 'Test1 RMI Replatform'
