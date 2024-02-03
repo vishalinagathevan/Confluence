@@ -95,12 +95,12 @@ def find_service_name(data, name):
 #Get confluence url and application name
 argparser = argparse.ArgumentParser(prog='confluence_page',
                                     description='To read table content from confluence page and providing output to jenkins pipeline')
-argparser.add_argument('-confluence_api_base', '--confluence_url', type=str, metavar='', required=True, help='url to access confluence page')
-argparser.add_argument('-app_name','--confluence_app_name', type=str, metavar='', required=True, help='Application name')
+argparser.add_argument('-u', '--url', type=str, metavar='', required=True, help='url to access confluence page')
+argparser.add_argument('-a','--appname', type=str, metavar='', required=True, help='Application name')
 
 args = argparser.parse_args()
-confluence_rest_api = args.confluence_url
-application_name = args.confluence_app_name
+confluence_rest_api = args.url
+application_name = args.appname
 
 #  To get confluence page data
 html_content = get_confluence_page_html(username, confluence_apitoken)

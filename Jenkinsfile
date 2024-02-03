@@ -14,7 +14,7 @@ pipeline {
         }
 
         stage('Confluence Page Job') {
-            steps {
+            steps {_
                 // Execute the Python script
                 script {
                     sh 'python confluence_page.py -confluence_api_base https://vishalinagathevan.atlassian.net/wiki/rest/api/content/131199?expand=body.storage -app_name "Test1 RMI Replatform"'
