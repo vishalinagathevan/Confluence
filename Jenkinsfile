@@ -1,31 +1,15 @@
-pipeline {
-    agent any
-
-    options {
-        buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: ''))
-    }
-
-    stages {
-        stage('Checkout') {
-            steps {
-                // Checkout your source code repository
-                git 'https://github.com/vishalinagathevan/Confluence.git'
-            }
-        }
-
-        stage('Confluence Page Job') {
-            steps {_
-                // Execute the Python script
-                script {
-                    sh 'python confluence_page.py -confluence_api_base https://vishalinagathevan.atlassian.net/wiki/rest/api/content/131199?expand=body.storage -app_name "Test1 RMI Replatform"'
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            // Add any cleanup or final steps here
+node {
+    String confUrl = 'https://vishalinagathevan.atlassian.net/wiki/rest/api/content/131199?expand=body.storage'
+    String appName = 'Test1 RMI Replatform'
+    stage('Get Services Info') {
+        checkout scm
+        withCredentials([usernamePassword(credentialsId: 'CONFLUENCE', usernameVariable: 'CONFLUENCE_USER', passwordVariable: 'CONFLUENCE_TOKEN')]) {
+            String serviceInfoCommand = """
+                python -m pip install -r requirements.txt --user
+                python service-getter.py -u ${confUrl} -a ${appName}
+            """
+            def output = sh(returnStdout: true, script: serviceInfoCommand)
+            print(output)
         }
     }
 }

@@ -58,7 +58,7 @@ def extract_table_data(html_content):
     
     soup = BeautifulSoup(html_content, "html.parser")
     table = soup.find("table")
-
+    
     if table:
         # Extract table data as a list of lists
         table_data = []
@@ -93,7 +93,7 @@ def find_service_name(data, name):
     return None
 
 #Get confluence url and application name
-argparser = argparse.ArgumentParser(prog='confluence_page',
+argparser = argparse.ArgumentParser(prog='service-getter',
                                     description='To read table content from confluence page and providing output to jenkins pipeline')
 argparser.add_argument('-u', '--url', type=str, metavar='', required=True, help='url to access confluence page')
 argparser.add_argument('-a','--appname', type=str, metavar='', required=True, help='Application name')
@@ -104,10 +104,11 @@ application_name = args.appname
 
 #  To get confluence page data
 html_content = get_confluence_page_html(username, confluence_apitoken)
+# print(f"html_content : {html_content}")
 
 if html_content:
     table_data = extract_table_data(html_content)
-
+    # print(f"table_data : {table_data}")
     if table_data:
         service_names = find_service_name(table_data, application_name)
         if service_names:
